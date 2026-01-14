@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../styles/auth_st.css">
+    <script src="../scripts/authLogin.js"></script>
+    <title>Авторизация</title>
+</head>
+
+<body>
+    <header id="header">
+        <h1 class="brand-title">Регистрация/Авторизация</h1>
+        <nav class="navigation-list">
+            <ul>
+                <!---
+                <li><a href="">point</a></li>
+                <li><a href="">point</a></li>
+                <li><a href="">point</a></li>
+                <li><a href="">point</a></li>
+                -->
+            </ul>
+        </nav>
+    </header>
+    <main id="main">
+        <div class="forms-auth">
+            <!-- ФОРМА АВТОРИЗАЦИИ -->
+            <div class="form-card">
+                <h2>Вход в аккаунт</h2>
+                <form action="" method="post" id="login-form">
+                    <div class="label_and_input">
+                        <label for="username_log">Username</label>
+                        <input type="text" id="username_log" name="username_log" required placeholder="Логин">
+                    </div>
+                    <div class="label_and_input">
+                        <label for="password_log">Password</label>
+                        <input type="password" id="password_log" name="password_log" required placeholder="Пароль">
+                    </div>
+                    <button type="submit" class="sub_form_button">Войти</button>
+                </form>
+            </div>
+            <!-- ФОРМА РЕГИСТРАЦИИ-->
+            <div class="form-card">
+                <h2>Создание аккаунта</h2>
+                <form action="" method="post" id="register-form">
+                    <div class="label_and_input">
+                        <label for="username_reg">Username</label>
+                        <input type="text" id="username_reg" name="username_reg" required placeholder="Логин">
+                    </div>
+                    <div class="label_and_input">
+                        <label for="full_name">Full Name (optional)</label>
+                        <input type="text" id="full_name" name="full_name" placeholder="Полное имя (опционально)">
+                    </div>
+                    <div class="label_and_input">
+                        <label for="password_reg">Password</label>
+                        <input type="password" id="password_reg" name="password_reg" required placeholder="Пароль">
+                    </div>
+                    <div class="label_and_input">
+                        <label for="password_confirm">Password (confirm)</label>
+                        <input type="password" id="password_confirm" name="password_confirm" required placeholder="Повторите пароль">
+                    </div>
+                    <button type="submit" class="sub_form_button">Зарегистрироваться</button>
+                </form>
+            </div>
+        </div>
+    </main>
+    <footer id="footer">
+        <div class="footer_block">
+            <!--
+            <div>
+                <a href="">Разработчик</a>
+            </div>
+            <div>
+                <a href="">Информация</a>
+            </div>
+            -->
+        </div>
+    </footer>
+</body>
+
+</html>
