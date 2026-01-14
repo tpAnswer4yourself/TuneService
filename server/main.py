@@ -75,10 +75,14 @@ def get_user(user_id: int, db: Session = Depends(get_db)):
     return user
 
 @router.delete("/{user_id}", status_code=204)
-def delete_user(user_id: int, db: Session = Depends(get_db)):
+def delete_user(user_id: int, current_user: DbUser = Depends(get_current_user), db: Session = Depends(get_db)):
     user = db.query(DbUser).filter(DbUser.id == user_id).first()
     if not user:
-        raise HTTPException(404, "User not found")
+        raise HTTPException(status_code=404, detail="User not found", headers={"WWW-Authenticate": "Bearer"})
+    
+    if user.id != DbUser.id:
+        raise HTTPException(status_code=403, detail="You can only delete own account!", headers={"WWW-Authenticate": "Bearer"})
+    
     db.delete(user)
     db.commit()
     return None
@@ -94,5 +98,10 @@ def login_user(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = D
     
     generated_token = create_access_token(username=base_user.username)
     return {"access_token": generated_token, "token_type": "bearer"}
+
+@router.get("/me", response_model=User)
+def get_current_user_profile(current_user: DbUser = Depends(get_current_user)):
+    return current_user
+
 
 app.include_router(router)
