@@ -19,20 +19,24 @@ body {
     border: 2px solid black;
     border-radius: 35px;
     padding: 1rem 4rem;
+    width: 40%;
+    text-align: center;
 }
 
 .sub_form_button {
     background-color: rgb(0, 255, 51);
-    font-size: 1rem;
+    font-size: 1.5rem;
     font-weight: 500;
     padding: 0.25rem 2rem;
+    margin: 1rem 0rem;
     border: 1px solid black;
     border-radius: 8px;
-    width: 70%;
+    width: auto;
 }
 
 .sub_form_button:hover {
     background-color: rgb(0, 220, 44);
+    cursor: pointer;
 }
 
 .label_and_input {
@@ -40,5 +44,20 @@ body {
     margin: 1rem 0rem;
     display: flex;
     justify-content: space-between;
-    row-gap: 2rem;
+    row-gap: 1rem;
+}
+
+.label_and_input input {
+    font-size: 1.2rem;
+    width: 50%;
+}
+
+.form-card a {
+    font-size: 1.5rem;
+    text-decoration: none;
+    transition: 0.1s ease-in
+}
+
+.form-card a:hover {
+    color: rgb(255, 0, 0);
 }
