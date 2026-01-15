@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Depends, HTTPException, APIRouter
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from database import engine, get_db, Base
@@ -18,6 +19,15 @@ app = FastAPI(title="RegService API")
 router = APIRouter(prefix="/users", tags=["users"])
 
 Base.metadata.create_all(bind=engine) # создание таблиц
+
+list_origins = ["http://localhost:5500"]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=list_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"]
+    )
 
 @app.get("/")
 def root():
@@ -44,7 +54,7 @@ def test_database(db: Session = Depends(get_db)):
 def get_users(db: Session = Depends(get_db)):
     return db.query(DbUser).all()
 
-@router.post("/", response_model=User, status_code=201)
+@router.post("/registrate", response_model=User, status_code=201)
 def create_user(user: UserCreate, db: Session = Depends(get_db)):
     if db.query(DbUser).filter(DbUser.username == user.username).first():
         raise HTTPException(400, "Username already exists")

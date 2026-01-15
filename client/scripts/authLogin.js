@@ -28,10 +28,68 @@ document.addEventListener('DOMContentLoaded', () => {
         //перехват обработки отправки
         event.preventDefault() //отмена стандартного поведения формы (перезагрузка страницы)
         console.log("form-login форма обрабатывается")
+
+        div_error.textContent = ""
+
+        const Form_Data = new FormData(form_login)
+        fetch(`${URL_BASE_API}users/login`, {
+            method: 'POST',
+            body: Form_Data
+        })
+        .then(response => {
+            if(!response.ok) {
+                return response.json().then(err => {throw new Error(err.detail)})
+            }
+            return response.json()
+        })
+        .then(data => {
+            localStorage.setItem('token', data.access_token)
+            window.location.href = 'dashboard.html'
+        })
+        .catch(errorrr => {
+            div_error.textContent = errorrr.message || "Кажется, что-то пошло не так"
+            div_error.style.display = 'block'
+        })
+        console.log("отправка на сервер авторизации")
     })
 
     form_reg.addEventListener('submit', function(event) {
         event.preventDefault()
         console.log("form-reg форма обрабатывается")
+        div_error.textContent = ""
+        const password_one = document.getElementById("password_reg").value
+        const password_two = document.getElementById("password_confirm_reg").value
+        if (password_one !== password_two) {
+            console.log("ПАРОЛИ НЕ СОВПАДАЮТ")
+            alert("Ошибка! Пароли не совпадают")
+            return 
+        }
+        const data_form_reg = {
+            username: document.getElementById("username_reg").value,
+            email: document.getElementById("email_reg").value,
+            full_name: document.getElementById("full_name_reg").value,
+            password_hash: document.getElementById("password_reg").value
+        };
+        fetch(`${URL_BASE_API}users/registrate`, {
+            method: 'POST',
+            body: JSON.stringify(data_form_reg),
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => {
+            if(!response.ok) {
+                return response.json().then(err => {throw new Error(err.detail)})
+            }
+            return response.json()
+        })
+        .then(data => {
+            console.log("Пользователь успешно зарегистрирован!")
+            window.location.href = 'dashboard.html'
+        })
+        .catch(errorrr => {
+            div_error.textContent = errorrr.message || "Кажется, что-то пошло не так"
+            div_error.style.display = 'block'
+        })
     })
 })
