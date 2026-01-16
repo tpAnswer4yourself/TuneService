@@ -34,7 +34,9 @@ document.addEventListener('DOMContentLoaded', () => {
         })
         .then (data => {
             block_user_info.innerHTML = `
-                Привет, ${data.username}!
+                Логин: ${data.username}!<br>
+                Фамилия: ${data.full_name}<br>
+                Email: ${data.email}
             `
         })
         .catch (errorrr => {
@@ -42,4 +44,77 @@ document.addEventListener('DOMContentLoaded', () => {
         })
     }
     
+    const logout_btn = document.getElementById("logout-btn")
+    const newpassword = document.getElementById("newpass-btn")
+
+    logout_btn.addEventListener('click', function(event) {
+        window.location.href = 'auth.html'
+        localStorage.removeItem('token')
+        console.log("Вы вышли из аккаунта")
+    })
+
+    let ActiveChangeForm = false
+    const form_change_password = document.getElementById("change-password-form")
+    const div_error = document.getElementById("error-message_ch")
+
+    newpassword.addEventListener('click', function(event) {   
+        if (ActiveChangeForm === false) {
+            form_change_password.style.display = 'block'
+            ActiveChangeForm = true
+
+        }
+        else {
+            form_change_password.style.display = 'none'
+            ActiveChangeForm = false
+        }
+    })
+
+    form_change_password.addEventListener('submit', function(event) {
+        event.preventDefault() // перехват
+        div_error.textContent = ""
+
+        const data_passwords = {
+            old_password: document.getElementById("old_password").value,
+            new_password: document.getElementById("new_password").value,
+            new_password_confirm: document.getElementById("new_password_confirm").value
+        }
+        if (data_passwords.new_password != data_passwords.new_password_confirm) {
+            div_error.style.display = 'block'
+            div_error.textContent = "Ошибка! Новые пароли не совпадают!"
+            alert("Ошибка! Новые пароли не совпадают!")
+            return
+        }
+        if (data_passwords.old_password === data_passwords.new_password) {
+            div_error.style.display = 'block'
+            div_error.textContent = "Ошибка! Новый пароль не может совпадать со старым!"
+            alert("Ошибка! Новый пароль не может совпадать со старым!")
+            return
+        }
+        
+        fetch(`${URL_BASE_API}users/change-password`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify(data_passwords)
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(err => {throw new Error(err.detail)})
+            }
+            return response.json()
+        })
+        .then(data => {
+            console.log("Пароль от аккаунта успешно изменен!")
+            alert("Пароль от аккаунта успешно изменен!")
+            form_change_password.style.display = 'none'
+            ActiveChangeForm = false
+        })
+        .catch(error_r => {
+            div_error.style.display = 'block'
+            div_error.textContent = error_r.message || "Ошибка! Не удалось сменить пароль!"
+        })
+    })
+
 })

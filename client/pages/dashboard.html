@@ -28,11 +28,33 @@
         <section class="user_information">
             <div class="profile_block" id="profile-block">
                 <div class="user-data" id="user-data"></div>
-                <button id="logout-btn btn">Выйти из аккаунта</button>
-            </div>
-            <div class="unathorized_user" style="display: block;" id="unathorized-user">
-                <h3 class="brand-title">Извините, но сначала нужно войти в аккаунт!!!</h3>
-                <a href="auth.html"><button id="go-to-auth btn">Войти в аккаунт</button></a>
+                <button id="logout-btn" class="btn">Выйти из аккаунта</button>
+                <button id="newpass-btn" class="btn">Сменить пароль</button>
+                <div class="form-edit-pass">
+                    <form action="" method="post" id="change-password-form" style="display: none;">
+                        <div class="container-change-pass">
+                            <div class="label_and_input">
+                                <label for="old_password">Старый пароль</label>
+                                <input type="password" id="old_password" name="old_password" required
+                                    placeholder="Старый пароль">
+                            </div>
+                            <div class="label_and_input">
+                                <label for="new_password">Новый пароль</label>
+                                <input type="password" id="new_password" name="new_password" required
+                                    placeholder="Новый пароль">
+                            </div>
+                            <div class="label_and_input">
+                                <label for="new_password_confirm">Новый пароль (повторно)</label>
+                                <input type="password" id="new_password_confirm" name="new_password_confirm" required
+                                    placeholder="Новый пароль (повторно)">
+                            </div>
+                            <button type="submit" class="sub_form_button">Сменить пароль</button>
+                        </div>
+                    </form>
+                    <div class="error-message" style="display: none;" id="error-message_ch">Непредвиденная ошибка!
+                        Пожалуйста,
+                        перезагрузите страницу😰😥😢😭</div>
+                </div>
             </div>
         </section>
     </main>

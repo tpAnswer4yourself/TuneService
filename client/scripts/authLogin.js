@@ -1,5 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     console.log("Страница загружена, можно начинать работу")
+    checkToken() //проверка на авторизированность (шнейне пепе)
 
     const form_login = document.getElementById("login-form")
     const div_login = document.querySelector(".login_div")
@@ -95,4 +96,11 @@ document.addEventListener('DOMContentLoaded', () => {
             div_error.style.display = 'block'
         })
     })
+
+    function checkToken() {
+        if (localStorage.getItem('token') !== null) {
+            console.log("токен есть, переброс на page-профиль")
+            window.location.href = 'dashboard.html'
+        }
+    }
 })
