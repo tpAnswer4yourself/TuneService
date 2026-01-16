@@ -17,10 +17,11 @@ from fastapi.security import OAuth2PasswordRequestForm
 
 app = FastAPI(title="RegService API")
 router = APIRouter(prefix="/users", tags=["users"])
+router_auth = APIRouter(prefix="/cabinet", tags="cabinet")
 
 Base.metadata.create_all(bind=engine) # создание таблиц
 
-list_origins = ["http://localhost:5500"]
+list_origins = ["*"]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=list_origins,
@@ -49,7 +50,6 @@ def test_database(db: Session = Depends(get_db)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Ошибка соединения с бд: {str(e)}")
     
-
 @router.get("/", response_model=List[User])
 def get_users(db: Session = Depends(get_db)):
     return db.query(DbUser).all()
@@ -77,14 +77,14 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
     db.refresh(db_user)
     return db_user
 
-@router.get("/{user_id}", response_model=User)
+@router.get("/get/{user_id}", response_model=User)
 def get_user(user_id: int, db: Session = Depends(get_db)):
     user = db.query(DbUser).filter(DbUser.id == user_id).first()
     if not user:
         raise HTTPException(404, "User not found")
     return user
 
-@router.delete("/{user_id}", status_code=204)
+@router.delete("/delete/{user_id}", status_code=204)
 def delete_user(user_id: int, current_user: DbUser = Depends(get_current_user), db: Session = Depends(get_db)):
     user = db.query(DbUser).filter(DbUser.id == user_id).first()
     if not user:
@@ -112,6 +112,5 @@ def login_user(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = D
 @router.get("/me", response_model=User)
 def get_current_user_profile(current_user: DbUser = Depends(get_current_user)):
     return current_user
-
 
 app.include_router(router)

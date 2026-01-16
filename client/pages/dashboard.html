@@ -1,13 +1,42 @@
 <!DOCTYPE html>
 <html lang="ru">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Личный кабинет</title>
+    <link rel="stylesheet" href="../styles/cabinet.css">
     <script src="../scripts/config.js"></script>
-    <script src="../scripts/authLogin.js"></script>
+    <script src="../scripts/cabinet.js"></script>
 </head>
+
 <body>
-    УСПЕШНАЯ АВТОРИЗАЦИЯ
+    <header id="header">
+        <h1 class="brand-title">Личный кабинет</h1>
+        <nav class="navigation-list">
+            <ul>
+                <!---
+                <li><a href="">point</a></li>
+                <li><a href="">point</a></li>
+                <li><a href="">point</a></li>
+                <li><a href="">point</a></li>
+                -->
+            </ul>
+        </nav>
+    </header>
+    <main id="main">
+        <section class="user_information">
+            <div class="profile_block" id="profile-block">
+                <div class="user-data" id="user-data"></div>
+                <button id="logout-btn btn">Выйти из аккаунта</button>
+            </div>
+            <div class="unathorized_user" style="display: block;" id="unathorized-user">
+                <h3 class="brand-title">Извините, но сначала нужно войти в аккаунт!!!</h3>
+                <a href="auth.html"><button id="go-to-auth btn">Войти в аккаунт</button></a>
+            </div>
+        </section>
+    </main>
+    <footer id="footer"></footer>
 </body>
+
 </html>

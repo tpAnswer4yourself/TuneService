@@ -85,7 +85,10 @@ document.addEventListener('DOMContentLoaded', () => {
         })
         .then(data => {
             console.log("Пользователь успешно зарегистрирован!")
-            window.location.href = 'dashboard.html'
+            window.location.href = 'auth.html'
+            div_reg.style.display = 'none'
+            div_login.style.display = 'block'
+
         })
         .catch(errorrr => {
             div_error.textContent = errorrr.message || "Кажется, что-то пошло не так"
