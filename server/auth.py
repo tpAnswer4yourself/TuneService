@@ -29,15 +29,22 @@ def create_access_token(username: str):
         "iat": start_time, # время выдачи токена
         "exp": end_time # время конца действия токена
     }
-    
+    print("Токен .env:", ACCESS_TOKEN_EXPIRE_MINUTES)
+    print("Токен start_time:", start_time)
+    print("Токен end_time:", end_time)
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
 #функция написана, для авторизированных пользователей (можно в будущем для ролей юзать, внутри других функций (типо удалять могут только авторизированные юзеры))
 def get_current_user(token: str = Depends(scheme_auth), db: Session = Depends(get_db)):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=ALGORITHM)
+        exp_time = payload.get("exp")
+        print("с токеном все ок, он жив")
+        if exp_time is None or exp_time < datetime.utcnow().timestamp():
+            raise HTTPException(status_code=401, detail="Token has expired")
         
     except JWTError:
+        print("токен МЕРТВ")
         raise HTTPException(status_code=401, detail="Could not validate credentials", headers={"WWW-Authenticate": "Bearer"})
     
     username_from_payload = payload.get("sub")

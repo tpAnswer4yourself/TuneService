@@ -14,4 +14,11 @@ class User(UserBase):
     
     class Config:
         from_attributes = True
+
+class PasswordChangeRequest(BaseModel):
+    old_password: str
+    new_password: str
+    new_password_confirm: str
     
+class PasswordChangeResponse(BaseModel):
+    message: str

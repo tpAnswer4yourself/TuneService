@@ -7,7 +7,7 @@ import os
 
 from typing import List
 from models import User as DbUser
-from schemas import User, UserCreate
+from schemas import User, UserCreate, PasswordChangeRequest, PasswordChangeResponse
 
 import bcrypt
 
@@ -112,5 +112,23 @@ def login_user(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = D
 @router.get("/me", response_model=User)
 def get_current_user_profile(current_user: DbUser = Depends(get_current_user)):
     return current_user
+
+@router.post("/change-password", status_code=200)
+def change_password(
+    password_data: PasswordChangeRequest,
+    current_user: DbUser = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    #проверки на стороне сервера
+    if not bcrypt.checkpw(password_data.old_password.encode('utf-8'), current_user.password_hash.encode('utf-8')):
+        raise HTTPException(status_code=401, detail="Неверный старый пароль!", headers={"WWW-Authenticate": "Bearer"})
+    if password_data.new_password != password_data.new_password_confirm:
+        raise HTTPException(status_code=400, detail="Новые пароли не совпадают!", headers={"WWW-Authenticate": "Bearer"})
+    #хэширование
+    hashed_new_pass = bcrypt.hashpw(password_data.new_password.encode('utf-8'), bcrypt.gensalt())
+    current_user.password_hash = hashed_new_pass.decode('utf-8')
+    db.commit()
+    db.refresh(current_user)
+    return {"message": "Пароль успешно изменен!"}
 
 app.include_router(router)
