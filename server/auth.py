@@ -58,3 +58,9 @@ def get_current_user(token: str = Depends(scheme_auth), db: Session = Depends(ge
         raise HTTPException(status_code=401, detail="User not found!", headers={"WWW-Authenticate": "Bearer"})
     
     return user
+
+def get_current_admin(token: str = Depends(scheme_auth), db: Session = Depends(get_db)):
+    current_user = get_current_user(token, db)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Доступ запрещен! Требуются права администратора", headers={"WWW-Authenticate": "Bearer"})
+    return current_user

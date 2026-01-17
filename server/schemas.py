@@ -5,12 +5,14 @@ class UserBase(BaseModel):
     email: EmailStr
     full_name: str | None = None
     password_hash: str
+    role: str | None = "user"
     
 class UserCreate(UserBase):
     pass
 
 class User(UserBase):
     id: int
+    role: str
     
     class Config:
         from_attributes = True

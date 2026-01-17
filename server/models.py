@@ -9,3 +9,4 @@ class User(Base):
     email = Column(String, unique=True, index=True, nullable=False)
     full_name = Column(String, nullable=True)
     password_hash = Column(String, nullable=False)
+    role = Column(String, default="user", nullable=False)

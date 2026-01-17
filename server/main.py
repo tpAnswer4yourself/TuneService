@@ -11,7 +11,7 @@ from schemas import User, UserCreate, PasswordChangeRequest, PasswordChangeRespo
 
 import bcrypt
 
-from auth import scheme_auth, create_access_token, get_current_user
+from auth import scheme_auth, create_access_token, get_current_user, get_current_admin
 from fastapi.security import OAuth2PasswordRequestForm
 
 
@@ -130,5 +130,9 @@ def change_password(
     db.commit()
     db.refresh(current_user)
     return {"message": "Пароль успешно изменен!"}
+
+@router.get("/admin-panel", response_model=User)
+def get_admin_panel(current_user: DbUser = Depends(get_current_admin)):
+    return current_user
 
 app.include_router(router)

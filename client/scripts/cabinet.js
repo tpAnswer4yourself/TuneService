@@ -33,19 +33,33 @@ document.addEventListener('DOMContentLoaded', () => {
             return response.json()
         })
         .then (data => {
-            block_user_info.innerHTML = `
-                Логин: ${data.username}!<br>
-                Фамилия: ${data.full_name}<br>
-                Email: ${data.email}
-            `
+            if (data.role === 'admin') {
+                block_user_info.innerHTML = `
+                    Логин: ${data.username}<br>
+                    Фамилия: ${data.full_name || 'Не указана'}<br>
+                    Email: ${data.email}<br>
+                    Роль: ${data.role || 'Не указана роль'}<br>
+                    ID: ${data.id}<br>
+                    Вы администратор! Ниже список всех пользователей: ...
+                `
+            }
+            else {
+                block_user_info.innerHTML = `
+                    Логин: ${data.username}<br>
+                    Фамилия: ${data.full_name || 'Не указана'}<br>
+                    Email: ${data.email}<br>
+                `
+            }
+           
         })
         .catch (errorrr => {
             console.error(errorrr)
         })
     }
-    
+
     const logout_btn = document.getElementById("logout-btn")
     const newpassword = document.getElementById("newpass-btn")
+    const adminpanel_btn = document.getElementById("admin-panel-btn")
 
     logout_btn.addEventListener('click', function(event) {
         window.location.href = 'auth.html'
@@ -117,4 +131,30 @@ document.addEventListener('DOMContentLoaded', () => {
         })
     })
 
+    adminpanel_btn.addEventListener('click', function(event) {
+        const admin_block = document.getElementById("admin-block-panel")
+        admin_block.textContent = ""
+        const token_storage = localStorage.getItem('token')
+        fetch(`${URL_BASE_API}users/admin-panel`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token_storage}`
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(err => {throw new Error(err.detail)})
+            }
+            return response.json()
+        })
+        .then (data => {
+            admin_block.innerHTML = `
+                Информация: ${data.username}, ${data.role}, ${data.email}!!!
+            `   
+        })
+        .catch (errorrr => {
+            admin_block.textContent = errorrr.message || "Ошибка"
+            console.error(errorrr)
+        })
+    }) 
 })
