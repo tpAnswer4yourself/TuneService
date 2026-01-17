@@ -17,7 +17,6 @@ from fastapi.security import OAuth2PasswordRequestForm
 
 app = FastAPI(title="RegService API")
 router = APIRouter(prefix="/users", tags=["users"])
-router_auth = APIRouter(prefix="/cabinet", tags="cabinet")
 
 Base.metadata.create_all(bind=engine) # создание таблиц
 
@@ -50,8 +49,8 @@ def test_database(db: Session = Depends(get_db)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Ошибка соединения с бд: {str(e)}")
     
-@router.get("/", response_model=List[User])
-def get_users(db: Session = Depends(get_db)):
+@router.get("/all-users", response_model=List[User])
+def get_users(current_user: DbUser = Depends(get_current_admin), db: Session = Depends(get_db)):
     return db.query(DbUser).all()
 
 @router.post("/registrate", response_model=User, status_code=201)

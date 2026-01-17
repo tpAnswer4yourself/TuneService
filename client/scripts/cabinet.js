@@ -34,16 +34,17 @@ document.addEventListener('DOMContentLoaded', () => {
         })
         .then (data => {
             if (data.role === 'admin') {
+                adminpanel_btn.style.display = 'block'
                 block_user_info.innerHTML = `
                     Логин: ${data.username}<br>
                     Фамилия: ${data.full_name || 'Не указана'}<br>
                     Email: ${data.email}<br>
                     Роль: ${data.role || 'Не указана роль'}<br>
                     ID: ${data.id}<br>
-                    Вы администратор! Ниже список всех пользователей: ...
                 `
             }
             else {
+                adminpanel_btn.style.display = 'none'
                 block_user_info.innerHTML = `
                     Логин: ${data.username}<br>
                     Фамилия: ${data.full_name || 'Не указана'}<br>
@@ -60,6 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const logout_btn = document.getElementById("logout-btn")
     const newpassword = document.getElementById("newpass-btn")
     const adminpanel_btn = document.getElementById("admin-panel-btn")
+    const show_all_users_btn = document.getElementById('admin-users-btn')
 
     logout_btn.addEventListener('click', function(event) {
         window.location.href = 'auth.html'
@@ -70,6 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let ActiveChangeForm = false
     const form_change_password = document.getElementById("change-password-form")
     const div_error = document.getElementById("error-message_ch")
+    const admin_block = document.getElementById("admin-block-panel")
 
     newpassword.addEventListener('click', function(event) {   
         if (ActiveChangeForm === false) {
@@ -131,9 +134,8 @@ document.addEventListener('DOMContentLoaded', () => {
         })
     })
 
-    adminpanel_btn.addEventListener('click', function(event) {
-        const admin_block = document.getElementById("admin-block-panel")
-        admin_block.textContent = ""
+    adminpanel_btn.addEventListener('click', function(event) {  
+        adminpanel_btn.style.display = 'none'
         const token_storage = localStorage.getItem('token')
         fetch(`${URL_BASE_API}users/admin-panel`, {
             method: 'GET',
@@ -148,13 +150,98 @@ document.addEventListener('DOMContentLoaded', () => {
             return response.json()
         })
         .then (data => {
-            admin_block.innerHTML = `
-                Информация: ${data.username}, ${data.role}, ${data.email}!!!
-            `   
+            if (show_all_users_btn.style.display === 'block') {
+                console.log("Панель уже открыта")
+                admin_info = ""
+                admin_info.innerHTML = `
+                    Информация: ${data.username}, ${data.role}, ${data.email}!!! <br>
+                `
+            }
+            else {
+                console.log("Открываем панель")
+                show_all_users_btn.style.display = 'block'
+                const admin_info = document.createElement('div')
+                admin_info.innerHTML = `
+                    Информация: ${data.username}, ${data.role}, ${data.email}!!! <br>
+                `
+                admin_block.prepend(admin_info)
+            }  
         })
         .catch (errorrr => {
             admin_block.textContent = errorrr.message || "Ошибка"
             console.error(errorrr)
         })
-    }) 
+    })
+
+
+    show_all_users_btn.addEventListener('click', function(event) {
+        //admin_block.innerHTML = '' //как один из вариантов исключения дубляжа
+        show_all_users_btn.style.display = 'none'
+        const token_storage = localStorage.getItem('token')
+        const header_table = document.createElement('p')
+        header_table.classList.add('brand-title')
+        header_table.textContent = 'Все пользователи системы'
+        const container_table_users = document.createElement('div')
+        container_table_users.classList.add('container_show_all_users')
+        const table_users = document.createElement('table')
+        table_users.id = 'table-all-users'
+        const thead_for_showall = document.createElement('thead')
+        const thead_row = document.createElement('tr')
+
+        const headers__row = ['ID', 'Username', 'Email', 'role']
+        headers__row.forEach(header_text => {
+            const th = document.createElement('th')
+            th.textContent = header_text
+            thead_row.appendChild(th)
+        })
+
+        const tbody_showall = document.createElement('tbody')
+
+        container_table_users.appendChild(header_table)
+        thead_for_showall.appendChild(thead_row)
+        table_users.appendChild(thead_for_showall)
+        table_users.appendChild(tbody_showall)
+        container_table_users.appendChild(table_users)
+        admin_block.appendChild(container_table_users)
+
+
+        fetch(`${URL_BASE_API}users/all-users`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token_storage}`
+            }
+        })
+        .then (response => {
+            if (!response.ok) {
+                return response.json().then(err => {throw new Error(err.detail)})
+            }
+            return response.json()
+        })
+        .then (data => {
+            tbody_showall.innerHTML = ''
+            if (data.length === 0) {
+                container_table_users.textContent = 'Пользователей не найдено!'
+                return
+            }
+            data.forEach(user => {
+                const row = document.createElement('tr')
+                const colls = [
+                    user.id || '-',
+                    user.username || '-',
+                    user.email || '-',
+                    user.role || '-'
+                ]
+                colls.forEach(colltext => {
+                    const td = document.createElement('td')
+                    td.textContent = colltext
+                    row.appendChild(td)
+                })
+                tbody_showall.appendChild(row)
+            })
+        })
+        .catch (errorrr => {
+            container_table_users.textContent = errorrr.message || "Ошибка"
+            console.error(errorrr)
+        })
+    })
 })
