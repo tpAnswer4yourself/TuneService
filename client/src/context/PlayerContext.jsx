@@ -8,34 +8,18 @@ function PlayerProvider({ children }) {
     const audioRef = useRef(null) //управление аудио
 
     const playTrack = (track) => {
+        console.log('PLAYERCONTEXT: playTrack')
         setCurrentTrack(track)
         setIsPlaying(true)
     }
 
     const togglePlayPause = () => {
-        console.log('Поменяли воспроизведение')
+        console.log('PLAYERCONTEXT: togglePlayPause')
         setIsPlaying(!isPlaying)
     }
-    /*
-        //смена текущего трека
-        useEffect(() => {
-            console.log("useEffect сработал. currentTrack:", currentTrack?.title, "isPlaying:", isPlaying)
-            if (currentTrack && audioRef.current) {
-                console.log("Устанавливаем src:", `http://localhost:8000/tracks/stream/${currentTrack.id}`)
-                audioRef.current.src = `http://localhost:8000/tracks/stream/${currentTrack.id}`
-                audioRef.current.load()
-                if (isPlaying) {
-                    console.log("Пытаемся играть...")
-                    audioRef.current.play().catch(e => {
-                        console.log('Воспроизводим трек', e.name, e.message)
-                        setIsPlaying(false)
-                    })
-                }
-            }
-        }, [currentTrack, isPlaying])*/
 
     return (
-        <PlayerContext.Provider value={{ currentTrack, isPlaying, playTrack, togglePlayPause }}>
+        <PlayerContext.Provider value={{ currentTrack, isPlaying, playTrack, togglePlayPause, audioRef, setCurrentTrack }}>
             {children}
         </PlayerContext.Provider>
     )

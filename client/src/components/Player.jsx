@@ -1,14 +1,16 @@
-import { useContext, useEffect, useRef, useState } from "react"
+import { useContext, useEffect, useState } from "react"
 import { PlayerContext } from "../context/PlayerContext"
 
 function Player() {
-    const { currentTrack, isPlaying, togglePlayPause } = useContext(PlayerContext)
-    const audioRef = useRef(null)
+    const { currentTrack, isPlaying, togglePlayPause, audioRef, setCurrentTrack } = useContext(PlayerContext)
     const [isClose, setIsClose] = useState(true)
 
     const closePanel = () => {
-        audioRef.current.pause()
         setIsClose(true)
+        console.log('сбрасываем трек')
+        setCurrentTrack(null)
+        audioRef.current.src = ``
+        audioRef.current.load()
     }
 
     useEffect(() => {
@@ -23,10 +25,10 @@ function Player() {
                 console.log("Пытаемся играть...")
                 //audioRef.current.playbackRate = 1.5 //скорость трека
                 //audioRef.current.volume = 0.8 //громкость трека
-                audioRef.current.play().catch(e => {
-                    console.log('Воспроизводим трек', e.name, e.message)
-                    setIsPlaying(false)
-                })
+                audioRef.current.play()
+                    .catch(e => {
+                        console.log('Ошибка:', e.name, e.message)
+                    })
             }
         }
     }, [currentTrack])
@@ -51,6 +53,7 @@ function Player() {
             <>
                 <div className="player-bg"
                     style={{
+                        fontSize: '14px',
                         position: 'fixed',
                         bottom: 'auto',
                         top: 0,
@@ -66,11 +69,9 @@ function Player() {
                         width: '50%',
                         borderRadius: '35px',
                         marginTop: '15px',
-                    }}>
-                    <h2>{currentTrack ? currentTrack.title : 'ничего не играет'}</h2>
-                    <h2>-</h2>
-                    <h2>{currentTrack ? currentTrack.artist : ''}</h2>
-                    <button onClick={togglePlayPause}>
+                    }} hidden={!isClose}>
+                    <h2>{currentTrack ? currentTrack.title + ' - ' : 'ничего не играет'}{currentTrack ? currentTrack.artist : ''}</h2>
+                    <button onClick={togglePlayPause} hidden={!currentTrack}>
                         {isPlaying ? '⏸' : '▶'}
                     </button>
                     <audio ref={audioRef} />
