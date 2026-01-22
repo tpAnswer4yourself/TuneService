@@ -2,16 +2,14 @@ import { useContext, useEffect, useState } from "react"
 import { PlayerContext } from "../context/PlayerContext"
 
 function Player() {
-    const { currentTrack, isPlaying, togglePlayPause, audioRef, setCurrentTrack, setIsPlaying, changeVolume, volume } = useContext(PlayerContext)
-    const token = localStorage.getItem('token')
+    const { currentTrack, isPlaying, togglePlayPause, audioRef, setCurrentTrack, setIsPlaying,
+        changeVolume, volume, duration, currentTime, replayToTime, setCurrentTime, setDuration } = useContext(PlayerContext)
     const [volumeLast, setVolumeLast] = useState(volume)
 
-    if (!token) return null
-
     const closePanel = () => {
-        console.log('сбрасываем трек')
         if (audioRef.current) {
             audioRef.current.src = ''
+            audioRef.current.currentTime = 0
             audioRef.current.load()
         }
         setCurrentTrack(null)
@@ -24,7 +22,6 @@ function Player() {
             changeVolume(0)
         }
         else {
-            console.log(`volume and last: ${volume}, ${volumeLast}`)
             if (volumeLast === null) {
                 volumeLast = 1
             }
@@ -34,12 +31,29 @@ function Player() {
 
     useEffect(() => {
         if (audioRef.current) {
-            audioRef.current.volume = volume
-            console.log(`Громкость установлена на: ${volume}`)
-        }
-    }, [volume]) // Этот эффект будет срабатывать при изменении volume
+            const dur = audioRef.current.duration
+            setDuration(isNaN(dur) || !isFinite(dur) ? 0 : dur)
 
-    // Также обновляем volumeLast при изменении volume извне
+            audioRef.current.onloadedmetadata = () => {
+
+                const dur = audioRef.current.duration
+                console.log(`audioRef.current.duratiom^^^^ ${audioRef.current.duration}`)
+                setDuration(isNaN(dur) || !isFinite(dur) ? 0 : dur)
+            }
+
+            audioRef.current.ontimeupdate = () => {
+                console.log(`audioRef.current.currentTime^^^^ ${audioRef.current.currentTime}`)
+                setCurrentTime(audioRef.current.currentTime || 0)
+            }
+        }
+    })
+
+    useEffect(() => {
+        if (audioRef.current) {
+            audioRef.current.volume = volume
+        }
+    }, [volume])
+
     useEffect(() => {
         if (volume > 0) {
             setVolumeLast(volume)
@@ -52,6 +66,7 @@ function Player() {
             console.log("Устанавливаем src:", `http://localhost:8000/tracks/stream/${currentTrack.id}`)
             audioRef.current.src = `http://localhost:8000/tracks/stream/${currentTrack.id}`
             audioRef.current.load()
+            audioRef.current.volume = volume
 
             if (isPlaying) {
                 console.log("Пытаемся играть...")
@@ -88,21 +103,38 @@ function Player() {
                         position: 'fixed',
                         bottom: 'auto',
                         top: 0,
-                        right: '25%',
-                        left: '25%',
+                        right: '22%',
+                        left: '22%',
                         background: isPlaying ? '#6214ff7c' : '#7b39ff7c',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        gap: '50px',
+                        gap: '10px',
                         height: '50px',
                         zIndex: 1000,
-                        width: '50%',
+                        width: '56%',
                         borderRadius: '35px',
                         marginTop: '15px',
                         transition: '0.07s ease-in'
                     }}>
                 <h2>{currentTrack ? currentTrack.title + ' - ' : 'ничего не играет'}{currentTrack ? currentTrack.artist : ''}</h2>
+                <input
+                    type="range"
+                    min={0}
+                    max={duration - 1}
+                    step={0.1}
+                    value={currentTime || 0}
+                    onChange={(e) => replayToTime(Number(e.target.value))}
+                    style={{
+                        width: '225px',
+                        cursor: 'pointer',
+                        outline: 'none',
+                        background: 'linear-gradient(to right, #e9e9ff, #ffdbdb)',
+                        appearance: 'none',
+                        borderRadius: '20px'
+                    }}
+                />
+                <span>{parseFloat((currentTime).toFixed(0))} / {Math.floor(duration)}</span>
                 <button onClick={toggleSound} style={{
                     background: volume > 0 ? 'green' : 'red'
                 }}>
@@ -122,6 +154,7 @@ function Player() {
                         }
                     }}
                     style={{
+                        width: '100px',
                         cursor: 'pointer',
                         outline: 'none',
                         background: 'linear-gradient(to right, #e7c9ff, #f89ceb)',
@@ -129,6 +162,7 @@ function Player() {
                         borderRadius: '20px'
                     }}
                 />
+                <span>{parseFloat((volume * 100).toFixed(1))}%</span>
                 <button onClick={togglePlayPause} hidden={!currentTrack}>
                     {isPlaying ? '⏸' : '▶'}
                 </button>

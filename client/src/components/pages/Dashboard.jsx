@@ -83,25 +83,31 @@ function Dashboard() {
     else if (user.role === 'user') {
         return (
             <>
-                <h1>Личный кабинет</h1>
-                <h2>Добро пожаловать, {user.username}!</h2>
-                <div className='user-info'>
-                    <h3>Ваши данные:</h3>
-                    <ul>
-                        <li><b>Логин:</b> {user.username}</li>
-                        <li><b>Полное имя:</b> {user.full_name || 'Отсутсвует'}</li>
-                        <li><b>Электронная почта:</b> {user.email}</li>
-                        <li><b>Дата создания аккаунта:</b> {new Date(user.created_at).toLocaleDateString()}</li>
-                    </ul>
+                <div style={{
+                    background: 'linear-gradient(to top, #b2262646, #312f9840)',
+                    padding: '100px',
+                    borderRadius: '35px'
+                }}>
+                    <h1>Личный кабинет</h1>
+                    <h2>Добро пожаловать, {user.username}!</h2>
+                    <div className='user-info'>
+                        <h3>Ваши данные:</h3>
+                        <ul>
+                            <li><b>Логин:</b> {user.username}</li>
+                            <li><b>Полное имя:</b> {user.full_name || 'Отсутсвует'}</li>
+                            <li><b>Электронная почта:</b> {user.email}</li>
+                            <li><b>Дата создания аккаунта:</b> {new Date(user.created_at).toLocaleDateString()}</li>
+                        </ul>
+                    </div>
+                    <button onClick={() => { localStorage.removeItem('token'); localStorage.removeItem('role'); navigate('/login') }} style={style_button}>Выйти</button >
+                    <button onClick={() => { navigate('/upload-track') }}>Загрузить трек</button>
+                    <button onClick={toggleSearchTrack}>
+                        {searchtrack ? 'Скрыть поиск' : 'Найти трек по ID'}
+                    </button>
+                    <button onClick={() => { navigate('/all-tracks') }}>Показать все треки</button>
+                    <button onClick={() => { navigate('/dashboard/change-password') }}>Сменить пароль</button>
+                    {searchtrack && <SearchTrack />}
                 </div>
-                <button onClick={() => { localStorage.removeItem('token'); localStorage.removeItem('role'); navigate('/login') }} style={style_button}>Выйти</button >
-                <button onClick={() => { navigate('/upload-track') }}>Загрузить трек</button>
-                <button onClick={toggleSearchTrack}>
-                    {searchtrack ? 'Скрыть поиск' : 'Найти трек по ID'}
-                </button>
-                <button onClick={() => { navigate('/all-tracks') }}>Показать все треки</button>
-                <button onClick={() => { navigate('/dashboard/change-password') }}>Сменить пароль</button>
-                {searchtrack && <SearchTrack />}
             </>
         )
     }

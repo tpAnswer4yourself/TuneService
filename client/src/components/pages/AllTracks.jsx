@@ -60,12 +60,12 @@ function AllTracks() {
                 {error && <div style={{ color: 'red' }}>{error}</div>}
                 {isLoading && <h3>Загрузка треков</h3>}
                 {!isLoading && !error && tracks.length === 0 && <p>Треков пока нет</p>}
+                <button onClick={() => { navigate('/dashboard') }}>Вернуться в личный кабинет</button>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)' }}>
                     {tracks.map(track => (
                         <Track key={track.id} track={track} />
                     ))}
                 </div>
-                <button onClick={() => { navigate('/dashboard') }}>Вернуться в личный кабинет</button>
             </div>
         </>
     )
