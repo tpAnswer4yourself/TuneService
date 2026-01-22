@@ -15,7 +15,14 @@ function Track({ track }) {
     }
 
     return <>
-        <div className="track-card" style={{ background: '#e4ddef', padding: '20px', margin: '20px', borderRadius: '30px' }}>
+        <div className="track-card"
+            style={{
+                background: isCurrentTrack && isPlaying ? '#d4c5eb' : '#e4ddef',
+                padding: '20px',
+                margin: '20px',
+                borderRadius: '30px',
+                transition: '0.1s ease-in'
+            }}>
             <h3>{track.title} - {track.artist}</h3>
             <p>Загружен: {new Date(track.created_at).toLocaleDateString()}</p>
             <p>ID: {track.id}</p>

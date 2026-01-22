@@ -7,9 +7,15 @@ function AllTracks() {
     const [tracks, setTracks] = useState([])
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState('')
-    
+    const [sorting, setSorting] = useState(true)
 
-    const getTracks = async () => {
+    const handleSortTracks = () => {
+        const newSorting = !sorting
+        setSorting(newSorting)
+        getTracks(newSorting)
+    }
+
+    const getTracks = async (shouldSort) => {
         setError('')
         setIsLoading(true)
         try {
@@ -24,7 +30,13 @@ function AllTracks() {
                 throw new Error(err.detail || 'Ошибка загрузки')
             }
             const data = await response.json()
-            data.sort((a, b) => b.id - a.id)
+
+            if (shouldSort) {
+                data.sort((a, b) => b.id - a.id)
+            }
+            else {
+                data.sort((a, b) => a.id - b.id)
+            }
             setTracks(data)
         }
         catch (err) {
@@ -37,13 +49,14 @@ function AllTracks() {
     }
 
     useEffect(() => {
-        getTracks()
+        getTracks(sorting)
     }, [])
 
     return (
         <>
             <div>
                 <h1>Все треки</h1>
+                <button onClick={handleSortTracks}>Изменить порядок</button>
                 {error && <div style={{ color: 'red' }}>{error}</div>}
                 {isLoading && <h3>Загрузка треков</h3>}
                 {!isLoading && !error && tracks.length === 0 && <p>Треков пока нет</p>}
