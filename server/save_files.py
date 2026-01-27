@@ -12,7 +12,11 @@ async def save_upload_files(upload_file: UploadFile, destination: str):
         
     return destination
 
-async def delete_upload_files(destination: str):
-    print("Удаляю файл:", {destination})
-    #Заглушка для DELETE роута: tracks/delete/{tracks.id}
-    return destination
+def delete_upload_files(destination: str):
+    if (os.path.exists(destination)):
+        os.remove(destination)
+        print("Удаляю файл:", {destination})
+        return None
+    else:
+        print("Файла по пути не существует!!!:", {destination})
+        return None

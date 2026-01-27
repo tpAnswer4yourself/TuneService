@@ -1,12 +1,16 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 
 function Login() {
     const navigate = useNavigate()
-    //потом КРИТИЧНО ВАЖНО!!! НУЖНО перенести в useEffect
-    if (localStorage.getItem('token') !== null) {
-        navigate('/dashboard')
-    }
+
+    useEffect(() => {
+        if (localStorage.getItem('token') !== null) {
+            navigate('/dashboard')
+        }
+    }, []) //пустой массив - проверка при появлении компонента login
+
     // добавление состояний UseState()
     const [username, setUsername] = useState('')
     const [password, setPassword] = useState('')
@@ -35,11 +39,23 @@ function Login() {
             })
             .then(data => {
                 localStorage.setItem('token', data.access_token)
-                setUsername('')
-                setPassword('')
-                setError('')
-                navigate('/dashboard')
-                alert('Вы авторизировались!')
+                return fetch('http://localhost:8000/users/me', {
+                    headers: { 'Authorization': `Bearer ${data.access_token}` }
+                })
+                    .then(res => {
+                        if (!res.ok) {
+                            return res.json().then(err => { throw new Error(err.detail) })
+                        }
+                        return res.json()
+                    })
+                    .then(user => {
+                        localStorage.setItem('role', user.role)
+                        setUsername('')
+                        setPassword('')
+                        setError('')
+                        navigate('/dashboard')
+                        alert('Вы авторизировались!')
+                    })
             })
             .catch(error => {
                 setError(`${error}`)
@@ -70,7 +86,7 @@ function Login() {
                 />
                 {error && <div style={{ color: 'red' }}>{error}</div>}
                 <button type="submit">Войти</button>
-                <a href="/register">Нет аккаунта? Зарегистрироваться</a>
+                <Link to={"/register"}>Нет аккаунта? Зарегистрироваться</Link>
             </form>
         </>
     )

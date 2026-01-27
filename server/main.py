@@ -1,16 +1,19 @@
 from fastapi import FastAPI, Depends, HTTPException, APIRouter, File, UploadFile, Form
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from database import engine, get_db, Base
 import os
 import uuid
 
-from typing import List
+from typing import List, Optional
 from models import User as DbUser
 from models import Track as DbTrack
-from schemas import User, UserCreate, ChangePasswordRequest, Track # ChangePasswordResponse, TrackCreate
-from save_files import save_upload_files
+from models import Favorite as DbFavorite
+from schemas import User, UserCreate, ChangePasswordRequest, Track, TrackCreate, Favorite, FavoriteCreate # ChangePasswordResponse, TrackCreate
+from save_files import save_upload_files, delete_upload_files
+from cover_func import resize_cover
 
 import bcrypt
 
@@ -21,6 +24,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 app = FastAPI(title="RegService API")
 router = APIRouter(prefix="/users", tags=["users"])
 tracks_router = APIRouter(prefix="/tracks", tags=["tracks"])
+favorite_router = APIRouter(prefix="/favorite", tags=["favorites"])
 
 Base.metadata.create_all(bind=engine) # создание таблиц
 
@@ -53,8 +57,8 @@ def test_database(db: Session = Depends(get_db)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Ошибка соединения с бд: {str(e)}")
     
-@router.get("/all-users", response_model=List[User])
-def get_users(current_user: DbUser = Depends(get_current_admin), db: Session = Depends(get_db)):
+@router.get("/all", response_model=List[User])
+def get_users(db: Session = Depends(get_db)):
     return db.query(DbUser).all()
 
 @router.post("/registrate", response_model=User, status_code=201)
@@ -141,28 +145,53 @@ def get_admin_panel(current_user: DbUser = Depends(get_current_admin)):
 @tracks_router.post("/upload", response_model=Track, status_code=201)
 async def upload_track(
     file: UploadFile = File(...),
+    cover: Optional[UploadFile] = File(None),
     title: str = Form(...),
     artist: str = Form(...),
     current_user: DbUser = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    # Проверки и работа с аудио-файлом
     if file.filename == "":
         raise HTTPException(400, "File is not empty!!!")
     if not file.content_type in ["audio/mpeg", "audio/wav"]:
         raise HTTPException(400, "only audio")
-    ext = os.path.splitext(file.filename)[1].lower()
+    audio_ext = os.path.splitext(file.filename)[1].lower()
     ext_access = [".mp3", ".wav", ".ogg", ".flac"]
-    if ext not in ext_access:
+    if audio_ext not in ext_access:
         raise HTTPException(400, "Неподдерживаемый формат!")
-    unique_name = f"{uuid.uuid4().hex}{ext}"
-    file_path=f"uploads/tracks/{unique_name}"
-    await save_upload_files(file, file_path)
+    unique_name_audio = f"{uuid.uuid4().hex}{audio_ext}"
+    audio_file_path=f"uploads/tracks/{unique_name_audio}"
+    await save_upload_files(file, audio_file_path)
     
+    # Проверки и работа с обложкой
+    cover_path = None
+    if cover and cover.filename:
+        image_extensions = [".jpg", ".jpeg", ".png", ".webp"]
+        # image_content_types = ["image/jpeg", "image/png", "image/gif", "image/webp"]
+        
+        cover_ext = os.path.splitext(cover.filename)[1].lower()
+        if cover_ext not in image_extensions:
+            if os.path.exists(audio_file_path):
+                os.remove(audio_file_path)
+            raise HTTPException(400, f"Unsupported image format!")
+        unique_name_cover = f"{uuid.uuid4().hex}{cover_ext}"
+        cover_file_path=f"uploads/covers/{unique_name_cover}"
+        await save_upload_files(cover, cover_file_path)
+        
+        try:
+            await resize_cover(cover_file_path, max_size=(800, 800))
+        except Exception as e:
+            print(f"Error resizing cover: {e}")
+        
+        cover_path = cover_file_path
+        
     db_track = DbTrack(
         title = title,
         artist = artist,
         user_id = current_user.id,
-        file_path = file_path,
+        file_path = audio_file_path,
+        cover_path = cover_path,
         duration = None
     )
     
@@ -172,10 +201,12 @@ async def upload_track(
         db.refresh(db_track)
         return db_track
     except:
-        os.remove(file_path)
+        os.remove(audio_file_path)
+        if cover_path:
+            os.remove(cover_file_path)
         raise HTTPException(400, "Не удалось добавить трек в базу данных")
 
-@tracks_router.get("/{track_id}", response_model=Track)
+@tracks_router.get("/search_id={track_id}", response_model=Track)
 def get_track(track_id: int, db: Session = Depends(get_db)):
     track = db.query(DbTrack).filter(DbTrack.id == track_id).first()
     if not track:
@@ -183,8 +214,101 @@ def get_track(track_id: int, db: Session = Depends(get_db)):
     return track
 
 @tracks_router.get("/all", response_model=List[Track])
-def get_all_track(db: Session = Depends(get_db)):
+def get_all_tracks(db: Session = Depends(get_db)):
     return db.query(DbTrack).all()
+
+@tracks_router.get("/stream/{track_id}")
+async def stream_track(track_id: int, db: Session = Depends(get_db)):
+    track = db.query(DbTrack).filter(DbTrack.id == track_id).first()
+    if not track:
+        raise HTTPException(404, "Трек не найден!")
+    return FileResponse(track.file_path, media_type="audio/mpeg")
+
+@tracks_router.get("/cover/{track_id}")
+async def cover_track(track_id: int, db: Session = Depends(get_db)):
+    track = db.query(DbTrack).filter(DbTrack.id == track_id).first()
+    if not track:
+        raise HTTPException(404, "Трек не найден!")
+    if not track.cover_path:
+        return None
+    if not os.path.exists(track.cover_path):
+        raise HTTPException(404, "Файла для обложки нет на сервере!")
+    ext = os.path.splitext(track.cover_path)[1].lower()
+    media_types = {
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.png': 'image/png',
+        '.gif': 'image/gif',
+        '.webp': 'image/webp',
+        '.bmp': 'image/bmp'
+    }
+    media_type = media_types.get(ext, 'image/jpeg')
+    return FileResponse(track.cover_path, media_type=media_type)
+
+@tracks_router.delete("/delete/{track_id}", status_code=204)
+def delete_track(track_id: int, db: Session = Depends(get_db)):
+    track = db.query(DbTrack).filter(DbTrack.id == track_id).first()
+    if not track:
+        raise HTTPException(404, "Track not found!")
+    
+    delete_upload_files(track.file_path)
+    if track.cover_path:
+        delete_upload_files(track.cover_path)
+    db.delete(track)
+    db.commit()
+    return None
+
+@favorite_router.get("/my-tracks", response_model=List[Track])
+def get_my_favorite_tracks(current_user: DbUser = Depends(get_current_user), db: Session = Depends(get_db)):
+    tracks = db.query(DbTrack)\
+        .join(
+            DbFavorite,
+            DbFavorite.track_id == DbTrack.id
+        )\
+        .filter(DbFavorite.user_id == current_user.id)\
+        .order_by(DbFavorite.created_at.desc())\
+        .all()
+    return tracks
+
+@favorite_router.get("/track/{track_id}")
+def get_my_favorite_track_by_id(track_id: int, current_user: DbUser = Depends(get_current_user), db: Session = Depends(get_db)):
+    track = db.query(DbFavorite).filter(DbFavorite.user_id == current_user.id, DbFavorite.track_id == track_id).first()
+    return {"is_favorite": track is not None}
+
+@favorite_router.post("/add", response_model=Favorite, status_code=201)
+def add_track_in_favorite(request: FavoriteCreate, current_user: DbUser = Depends(get_current_user), db: Session = Depends(get_db)):
+    track_id = request.track_id
+    track_exist = db.query(DbTrack).filter(DbTrack.id == track_id).first()
+    if not track_exist:
+        raise HTTPException(404, "Track not found!") #проверка на существование трека
+    
+    track_yet_added = db.query(DbFavorite).filter(DbFavorite.user_id == current_user.id, DbFavorite.track_id == track_id).first()
+    if track_yet_added:
+        raise HTTPException(409, "The track has already been added to favorites!") # был ли добавлен трек ранее
+    
+    db_favorite = DbFavorite(
+        user_id = current_user.id,
+        track_id = track_id
+    )
+    
+    db.add(db_favorite)
+    db.commit()
+    db.refresh(db_favorite)
+    return db_favorite
+
+@favorite_router.delete("/delete/{track_id}", status_code=204)
+def delete_track_in_favorite(track_id: int, current_user: DbUser = Depends(get_current_user), db: Session = Depends(get_db)):
+    track = db.query(DbFavorite).filter(DbFavorite.user_id == current_user.id, DbFavorite.track_id == track_id).first()
+    if not track:
+        raise HTTPException(409, "The track has not already been added to favorites!") # был ли добавлен трек ранее
+    
+    db.delete(track)
+    db.commit()
+    return None
+
+
+
 
 app.include_router(router)
 app.include_router(tracks_router)
+app.include_router(favorite_router)
