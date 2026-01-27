@@ -1,22 +1,26 @@
-from fastapi import FastAPI, Depends, HTTPException, APIRouter
+from fastapi import FastAPI, Depends, HTTPException, APIRouter, File, UploadFile, Form
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from database import engine, get_db, Base
 import os
+import uuid
 
 from typing import List
 from models import User as DbUser
-from schemas import User, UserCreate, PasswordChangeRequest, PasswordChangeResponse
+from models import Track as DbTrack
+from schemas import User, UserCreate, ChangePasswordRequest, Track # ChangePasswordResponse, TrackCreate
+from save_files import save_upload_files
 
 import bcrypt
 
-from auth import scheme_auth, create_access_token, get_current_user, get_current_admin
+from auth import create_access_token, get_current_user, get_current_admin #scheme_auth
 from fastapi.security import OAuth2PasswordRequestForm
 
 
 app = FastAPI(title="RegService API")
 router = APIRouter(prefix="/users", tags=["users"])
+tracks_router = APIRouter(prefix="/tracks", tags=["tracks"])
 
 Base.metadata.create_all(bind=engine) # создание таблиц
 
@@ -80,7 +84,7 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
 def get_user(user_id: int, db: Session = Depends(get_db)):
     user = db.query(DbUser).filter(DbUser.id == user_id).first()
     if not user:
-        raise HTTPException(404, "User not found")
+        raise HTTPException(404, "User not found!")
     return user
 
 @router.delete("/delete/{user_id}", status_code=204)
@@ -114,7 +118,7 @@ def get_current_user_profile(current_user: DbUser = Depends(get_current_user)):
 
 @router.post("/change-password", status_code=200)
 def change_password(
-    password_data: PasswordChangeRequest,
+    password_data: ChangePasswordRequest,
     current_user: DbUser = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -134,4 +138,53 @@ def change_password(
 def get_admin_panel(current_user: DbUser = Depends(get_current_admin)):
     return current_user
 
+@tracks_router.post("/upload", response_model=Track, status_code=201)
+async def upload_track(
+    file: UploadFile = File(...),
+    title: str = Form(...),
+    artist: str = Form(...),
+    current_user: DbUser = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    if file.filename == "":
+        raise HTTPException(400, "File is not empty!!!")
+    if not file.content_type in ["audio/mpeg", "audio/wav"]:
+        raise HTTPException(400, "only audio")
+    ext = os.path.splitext(file.filename)[1].lower()
+    ext_access = [".mp3", ".wav", ".ogg", ".flac"]
+    if ext not in ext_access:
+        raise HTTPException(400, "Неподдерживаемый формат!")
+    unique_name = f"{uuid.uuid4().hex}{ext}"
+    file_path=f"uploads/tracks/{unique_name}"
+    await save_upload_files(file, file_path)
+    
+    db_track = DbTrack(
+        title = title,
+        artist = artist,
+        user_id = current_user.id,
+        file_path = file_path,
+        duration = None
+    )
+    
+    try:
+        db.add(db_track)
+        db.commit()
+        db.refresh(db_track)
+        return db_track
+    except:
+        os.remove(file_path)
+        raise HTTPException(400, "Не удалось добавить трек в базу данных")
+
+@tracks_router.get("/{track_id}", response_model=Track)
+def get_track(track_id: int, db: Session = Depends(get_db)):
+    track = db.query(DbTrack).filter(DbTrack.id == track_id).first()
+    if not track:
+        raise HTTPException(404, "Track not found!")
+    return track
+
+@tracks_router.get("/all", response_model=List[Track])
+def get_all_track(db: Session = Depends(get_db)):
+    return db.query(DbTrack).all()
+
 app.include_router(router)
+app.include_router(tracks_router)
