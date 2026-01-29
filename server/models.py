@@ -32,6 +32,7 @@ class Track(Base):
     cover_path = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     duration = Column(Integer, nullable=True, default=0)
+    views = Column(Integer, nullable=False, default=0)
     
     user = relationship("User", back_populates="tracks")
     favorites = relationship("Favorite", back_populates="track", cascade="all, delete-orphan")

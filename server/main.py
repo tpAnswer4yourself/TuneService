@@ -26,7 +26,7 @@ router = APIRouter(prefix="/users", tags=["users"])
 tracks_router = APIRouter(prefix="/tracks", tags=["tracks"])
 favorite_router = APIRouter(prefix="/favorite", tags=["favorites"])
 
-Base.metadata.create_all(bind=engine) # создание таблиц
+#Base.metadata.create_all(bind=engine) # делаем с помощью alembic миграции БД
 
 list_origins = ["*"]
 app.add_middleware(
@@ -257,6 +257,17 @@ def delete_track(track_id: int, db: Session = Depends(get_db)):
     db.delete(track)
     db.commit()
     return None
+
+@tracks_router.patch("/view/{track_id}", status_code=200)
+def update_view_count(track_id: int, db: Session = Depends(get_db), current_user: DbUser = Depends(get_current_user)):
+    track = db.query(DbTrack).filter(DbTrack.id == track_id).first()
+    if not track:
+        raise HTTPException(404, "Track not found!")
+    track.views += 1
+    # СДЕЛАТЬ ЛИМИТ ОТ ОДНОГО ЮЗЕРА НА ПРОСЛУШИВАНИЕ, ЛОГИКУ ЗАСЧИТЫВАНИЯ, ДОП.ПРОВЕРКИ НА СЕРВЕРЕ И ФРОНТЕ
+    db.commit()
+    db.refresh(track)
+    return {"message": "+1 прослушивание"}
 
 @favorite_router.get("/my-tracks", response_model=List[Track])
 def get_my_favorite_tracks(current_user: DbUser = Depends(get_current_user), db: Session = Depends(get_db)):

@@ -38,6 +38,7 @@ class Track(TrackCreate):
     cover_path: Optional[str] = None
     created_at: datetime
     duration: int
+    views: int
     
     class Config:
         from_attributes = True
